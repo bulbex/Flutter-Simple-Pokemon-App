@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
-
 import 'package:http/http.dart' as http;
 import 'package:pokemon_app/screens/list/list_instance/pokemon_list_instance.dart';
+import 'package:pokemon_app/utils/network_connection.dart';
+import 'package:pokemon_app/screens/error/error_widget.dart';
 
 class PokemonList extends StatefulWidget {
   const PokemonList({super.key});
@@ -13,13 +14,15 @@ class PokemonList extends StatefulWidget {
 }
 
 class PokemonListState extends State<PokemonList> {
-  late Future<Map<String, dynamic>> pokemonListResponse;
 
   late int maxCount = 0;
   late String nextPageUri = '';
   late List<dynamic> listOfPokemons = [];
 
   final _scrollController = ScrollController();
+
+  bool error = false;
+  bool loading = true;
 
   @override
   void initState() {
@@ -40,25 +43,40 @@ class PokemonListState extends State<PokemonList> {
 
   Widget buildPokemonListView() {
     return CupertinoPageScaffold(
-      child: FutureBuilder(
-        future: pokemonListResponse,
-        builder: (context, AsyncSnapshot snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
-          }
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Pokemon Viewer'),
+      ),
+      child: Builder(
+        builder: (context) {
+          if (loading) return const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
+          if (error) return const MyErrorWidget();
+          
           return ListView.separated(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(5),
-            itemCount: listOfPokemons.length,
-            itemBuilder: (BuildContext context, int index) {
-              // Check if the user loaded all possible pokemons
-              return listOfPokemons.length != maxCount && index != listOfPokemons.length - 1
-              ? PokemonListInstance(id: index + 1, name: '${listOfPokemons[index]['name']}')
-              // Loading indicator at the end of the list
-              : const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
-            },
-            separatorBuilder: (context, index) => const SizedBox(height: 5),
-          );
+              controller: _scrollController,
+              padding: const EdgeInsets.all(5),
+              itemCount: listOfPokemons.length,
+              itemBuilder: (BuildContext context, int index) {
+                PokemonListInstance pokemonListInstance = PokemonListInstance(
+                  name: '${listOfPokemons[index]['name']}',
+                  detailsUri: '${listOfPokemons[index]['url']}'
+                );
+
+                if (index != listOfPokemons.length - 1) {
+                  return pokemonListInstance;
+                }
+                // Last element with loading indicator for pagination,
+                // if the user did not loaded all possible pokemons
+                return listOfPokemons.length != maxCount 
+                ? Column(
+                    children: [
+                      pokemonListInstance,
+                      const SizedBox(height: 8),
+                      const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black))
+                  ],)
+                : pokemonListInstance;
+              },
+              separatorBuilder: (context, index) => const SizedBox(height: 5),
+            );
         } 
       )
     );
@@ -66,7 +84,9 @@ class PokemonListState extends State<PokemonList> {
 
   void _setUpScrollController() {
     // Check if the user reached the bottom of the screen
+    // and loaded all possible pokemons
     _scrollController.addListener(() {
+      listOfPokemons.length != maxCount &&
       _scrollController.position.pixels == _scrollController.position.maxScrollExtent
       ? loadPokemons(nextPageUri)
       : null;
@@ -74,13 +94,19 @@ class PokemonListState extends State<PokemonList> {
   }
 
   void loadPokemons(String uri) {
-    pokemonListResponse = fetchPokemonListData(uri);
-    
-    pokemonListResponse.then((response) {
+    fetchPokemonListData(uri)
+    .then((response) {
       setState(() {
+        loading = false;
         maxCount = response['count'];
         nextPageUri = response['next'];
         listOfPokemons.addAll(response['results']);
+      });
+    })
+    .catchError((e) {
+      setState(() {
+        loading = false;
+        error = true;
       });
     });
   }
