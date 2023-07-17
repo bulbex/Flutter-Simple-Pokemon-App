@@ -17,7 +17,7 @@ class PokemonListInstance extends StatelessWidget {
       onPressed: () {
         Navigator.push(
           context,
-          CupertinoPageRoute(builder: (context) => PokemonDetails(detailsUri: detailsUri))
+          CupertinoPageRoute(builder: (context) => PokemonDetails(name: name, detailsUri: detailsUri))
         );
       },
       child: Center(

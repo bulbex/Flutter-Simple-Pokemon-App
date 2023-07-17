@@ -1,7 +1,7 @@
 class Pokemon {
   final String name;
   final String photoUri;
-  final List<String> types;
+  final List<dynamic> types;
   final int weight;
   final int height;
 
@@ -17,7 +17,7 @@ class Pokemon {
     return Pokemon(
       name: json['name'],
       photoUri: json['sprites']['front_default'],
-      types: json['types'].map((type) => type['type']['name']),
+      types: json['types'].map((type) => type['type']['name']).toList(),
       weight: json['weight'],
       height: json['height']
     );

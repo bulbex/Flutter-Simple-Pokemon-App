@@ -44,12 +44,13 @@ class PokemonListState extends State<PokemonList> {
   Widget buildPokemonListView() {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text('Pokemon Viewer'),
+        backgroundColor: CupertinoColors.extraLightBackgroundGray,
+        middle: Text('SIMPLE POKEMON APP'),
       ),
       child: Builder(
         builder: (context) {
           if (loading) return const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
-          if (error) return const MyErrorWidget();
+          if (error && listOfPokemons.isEmpty) return const MyErrorWidget();
           
           return ListView.separated(
               controller: _scrollController,
@@ -71,7 +72,9 @@ class PokemonListState extends State<PokemonList> {
                     children: [
                       pokemonListInstance,
                       const SizedBox(height: 8),
-                      const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black))
+                      !error 
+                      ? const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black))
+                      : const Center(child: Text('An error occured while loading pokemons :('))
                   ],)
                 : pokemonListInstance;
               },
