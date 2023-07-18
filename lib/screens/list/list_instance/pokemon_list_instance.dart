@@ -8,7 +8,7 @@ class PokemonListInstance extends StatelessWidget {
   const PokemonListInstance({
     super.key,
     required this.name,
-    required this.detailsUri
+    this.detailsUri = ''
   });
 
   @override

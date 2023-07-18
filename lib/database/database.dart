@@ -5,8 +5,7 @@ import 'package:sqflite/sqflite.dart' as sql;
 class PokemonDatabaseHelper {
   static Future<void> createTables(sql.Database database) async {
     await database.execute("""CREATE TABLE pokemons(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        name TEXT,
+        name TEXT PRIMARY KEY,
         photo TEXT,
         types TEXT,
         weight INTEGER,
@@ -25,7 +24,7 @@ class PokemonDatabaseHelper {
     );
   }
 
-  static Future<int> insertPokemon(String name, String photo, List<String> types, int weight, int height) async {
+  static Future<void> insertPokemon(String name, String photo, List<dynamic> types, int weight, int height) async {
     final db = await PokemonDatabaseHelper.db();
 
     final data = {
@@ -36,26 +35,26 @@ class PokemonDatabaseHelper {
       'height': height
     };
 
-    final id = await db.insert(
+    await db.insert(
       'pokemons',
       data,
       conflictAlgorithm: sql.ConflictAlgorithm.replace
     );
-
-    return id;
   }
 
   static Future<List<Map<String, dynamic>>> getPokemonsName() async {
     final db = await PokemonDatabaseHelper.db();
-    return db.query('pokemons', columns: ['name'], orderBy: 'id');
+
+    return db.query('pokemons', columns: ['name']);
   }
 
   static Future<List<Map<String, dynamic>>> getPokemon(String name) async {
     final db = await PokemonDatabaseHelper.db();
+
     return db.query(
-      'pokemons', 
-      columns: ['name'],
-      where: 'name = $name'
+      'pokemons',
+      where: 'name = ?',
+      whereArgs: [name]
     );
   }
 }

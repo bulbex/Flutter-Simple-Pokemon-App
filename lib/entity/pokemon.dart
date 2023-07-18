@@ -1,13 +1,13 @@
 class Pokemon {
   final String name;
-  final String photoUri;
+  final String photo;
   final List<dynamic> types;
   final int weight;
   final int height;
 
   Pokemon({
     required this.name,
-    required this.photoUri,
+    required this.photo,
     required this.types,
     required this.weight,
     required this.height
@@ -16,7 +16,7 @@ class Pokemon {
   factory Pokemon.fromJson(Map<String, dynamic> json) {
     return Pokemon(
       name: json['name'],
-      photoUri: json['sprites']['front_default'],
+      photo: json['photo'],
       types: json['types'].map((type) => type['type']['name']).toList(),
       weight: json['weight'],
       height: json['height']

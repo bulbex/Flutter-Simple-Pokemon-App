@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
+import 'package:pokemon_app/database/database.dart';
 import 'package:pokemon_app/entity/pokemon.dart';
 import 'package:http/http.dart' as http;
+import 'package:pokemon_app/screens/error/error_widget.dart';
 
 class PokemonDetails extends StatefulWidget {
   const PokemonDetails({
@@ -25,7 +27,7 @@ class PokemonDetailsState extends State<PokemonDetails> {
   void initState() {
     super.initState();
 
-    _futurePokemon = loadPokemon(widget.detailsUri);
+    _futurePokemon = loadPokemon();
   }
 
   @override
@@ -43,38 +45,37 @@ class PokemonDetailsState extends State<PokemonDetails> {
       child: FutureBuilder(
         future: _futurePokemon,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Column(children: [
-              Center(
-                child: Image.network(snapshot.data!.photoUri, scale: 0.5)
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                child: Table(
-                  border: TableBorder.all(
-                    color: CupertinoColors.activeBlue, 
-                    borderRadius: const BorderRadius.all(Radius.circular(5))
+          if (snapshot.hasError) return MyErrorWidget(errorMessage: 'An error occured while loading ${widget.name.toUpperCase()} details.');
+          if (!snapshot.hasData) return const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
+          return Column(children: [
+            Center(
+              child: Image.memory(base64Decode(snapshot.data!.photo), scale: 0.5)
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Table(
+                border: TableBorder.all(
+                  color: CupertinoColors.activeBlue, 
+                  borderRadius: const BorderRadius.all(Radius.circular(5))
+                ),
+                children: <TableRow>[
+                  TableRow(
+                    children: <Widget>[
+                      _tableCell('TYPES'),
+                      _tableCell('WEIGHT'),
+                      _tableCell('HEIGHT')
+                    ]
                   ),
-                  children: <TableRow>[
-                    TableRow(
-                      children: <Widget>[
-                        _tableCell('TYPES'),
-                        _tableCell('WEIGHT'),
-                        _tableCell('HEIGHT')
-                      ]
-                    ),
-                    TableRow(
-                      children: <Widget>[
-                        _tableCell(snapshot.data!.types.join(", ")),
-                        _tableCell('${snapshot.data!.weight / 10} kg'),
-                        _tableCell('${snapshot.data!.height * 10} cm')
-                      ]
-                    )
-                  ])
-              )
-            ]);
-          }
-          return const Text('Something happened');
+                  TableRow(
+                    children: <Widget>[
+                      _tableCell(snapshot.data!.types.join(", ")),
+                      _tableCell('${snapshot.data!.weight / 10} kg'),
+                      _tableCell('${snapshot.data!.height * 10} cm')
+                    ]
+                  )
+                ])
+            )
+          ]);
         }
       )
     );
@@ -87,10 +88,45 @@ class PokemonDetailsState extends State<PokemonDetails> {
       child: Text(text, style: const TextStyle(fontSize: 20))
     );
   }
+
+  Future<Pokemon> loadPokemon() async {
+    var result = await PokemonDatabaseHelper.getPokemon(widget.name);
+    if (result.isNotEmpty) {
+      var pokemon = result[0];
+      return Pokemon(
+        name: pokemon['name'], 
+        photo: pokemon['photo'], 
+        types: pokemon['types'].split(','), 
+        weight: pokemon['weight'], 
+        height: pokemon['height']
+      );
+    }
+    return fetchPokemon(widget.name, widget.detailsUri);
+  }
 }
 
-Future<Pokemon> loadPokemon(String uri) async {
+Future<Pokemon> fetchPokemon(String name, String uri) async {
   final response = await http.get(Uri.parse(uri));
+  final pokemonData = jsonDecode(response.body);
 
-  return Pokemon.fromJson(jsonDecode(response.body));
+  final pokemonPhoto = await http.get(Uri.parse(pokemonData['sprites']['front_default']));
+  var base64Photo = base64Encode(pokemonPhoto.bodyBytes);
+
+  var pokemon = Pokemon(
+    name: pokemonData['name'],
+    photo: base64Photo,
+    types: pokemonData['types'].map((type) => type['type']['name']).toList(),
+    weight: pokemonData['weight'],
+    height: pokemonData['height']
+  );
+
+  await PokemonDatabaseHelper.insertPokemon(
+    pokemon.name,
+    pokemon.photo,
+    pokemon.types,
+    pokemon.weight,
+    pokemon.height
+  );
+
+  return pokemon;
 }

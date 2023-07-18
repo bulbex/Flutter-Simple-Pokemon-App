@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:pokemon_app/database/database.dart';
 import 'package:pokemon_app/screens/list/list_instance/pokemon_list_instance.dart';
 import 'package:pokemon_app/utils/network_connection.dart';
 import 'package:pokemon_app/screens/error/error_widget.dart';
@@ -23,6 +24,7 @@ class PokemonListState extends State<PokemonList> {
 
   bool error = false;
   bool loading = true;
+  bool offline = false;
 
   @override
   void initState() {
@@ -50,7 +52,8 @@ class PokemonListState extends State<PokemonList> {
       child: Builder(
         builder: (context) {
           if (loading) return const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black));
-          if (error && listOfPokemons.isEmpty) return const MyErrorWidget();
+          // Error on first load attempt
+          if (error && listOfPokemons.isEmpty) return const MyErrorWidget(errorMessage: 'An error occured while loading pokemons.\n');
           
           return ListView.separated(
               controller: _scrollController,
@@ -72,6 +75,7 @@ class PokemonListState extends State<PokemonList> {
                     children: [
                       pokemonListInstance,
                       const SizedBox(height: 8),
+                      // Pagination error
                       !error 
                       ? const Center(child: CupertinoActivityIndicator(color: CupertinoColors.black))
                       : const Center(child: Text('An error occured while loading pokemons :('))
@@ -96,20 +100,38 @@ class PokemonListState extends State<PokemonList> {
     });
   }
 
-  void loadPokemons(String uri) {
-    fetchPokemonListData(uri)
-    .then((response) {
-      setState(() {
-        loading = false;
-        maxCount = response['count'];
-        nextPageUri = response['next'];
-        listOfPokemons.addAll(response['results']);
+  void loadPokemons(String uri) async {
+    if (await checkConnection() == true) {
+      fetchPokemonListData(uri)
+      .then((response) {
+        setState(() {
+          loading = false;
+          maxCount = response['count'];
+          nextPageUri = response['next'];
+          listOfPokemons.addAll(response['results']);
+        });
+      })
+      .catchError((e) {
+        setState(() {
+          loading = false;
+          error = true;
+        });
       });
-    })
-    .catchError((e) {
+      return;
+    }
+    PokemonDatabaseHelper.getPokemonsName()
+    .then((result) {
+      if (result.isEmpty) {
+        setState(() {
+          loading = false;
+          error = true;
+        });
+        return;
+      }
       setState(() {
         loading = false;
-        error = true;
+        maxCount = result.length;
+        listOfPokemons.addAll(result);
       });
     });
   }

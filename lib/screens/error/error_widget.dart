@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 class MyErrorWidget extends StatelessWidget {
-  const MyErrorWidget({super.key, this.errorMessage = 'An error occured'});
-
+  const MyErrorWidget({super.key, required this.errorMessage});
 
   final String errorMessage;
 

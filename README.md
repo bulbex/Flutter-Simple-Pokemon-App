@@ -1,16 +1,5 @@
-# pokemon_app
+# Simple Pokemon app, which allows users to see pokemons
 
-A new Flutter project.
+### When user opens pokemon, pokemon data stores in database, 
+### after that the user could use app without an internet connection and view previously opened pokemons
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
