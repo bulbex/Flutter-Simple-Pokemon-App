@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:pokemon_app/database/database.dart';
+import 'package:pokemon_app/screens/details/pokemon_details.dart';
 import 'package:pokemon_app/screens/list/list_instance/pokemon_list_instance.dart';
 import 'package:pokemon_app/utils/network_connection.dart';
 import 'package:pokemon_app/screens/error/error_widget.dart';
+import 'package:provider/provider.dart';
 
 class PokemonList extends StatefulWidget {
   const PokemonList({super.key});
@@ -46,6 +48,7 @@ class PokemonListState extends State<PokemonList> {
   Widget buildPokemonListView() {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         backgroundColor: CupertinoColors.extraLightBackgroundGray,
         middle: Text('SIMPLE POKEMON APP'),
       ),
@@ -60,10 +63,46 @@ class PokemonListState extends State<PokemonList> {
               padding: const EdgeInsets.all(5),
               itemCount: listOfPokemons.length,
               itemBuilder: (BuildContext context, int index) {
-                PokemonListInstance pokemonListInstance = PokemonListInstance(
-                  name: '${listOfPokemons[index]['name']}',
-                  detailsUri: '${listOfPokemons[index]['url']}'
+                String pokemonName = '${listOfPokemons[index]['name']}';
+                String pokemonDetailsUri = '${listOfPokemons[index]['url']}';
+
+                Widget pokemonListInstance = CupertinoButton.filled(
+                  onPressed: () {
+                    var listInstance = context.read<PokemonListInstance>();
+
+                    listInstance.click(pokemonName, pokemonDetailsUri);
+
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(builder: (context) => PokemonDetails(
+                        name: pokemonName, 
+                        detailsUri: pokemonDetailsUri
+                        )
+                      )
+                    );
+                  },
+                  child: Center(
+                    child: Text(pokemonName.toUpperCase()),
+                  ),
                 );
+                
+                // Shows last visited pokemon via [Consumer] widget
+                if (index == 0) {
+                  return Column(children: [
+                    Consumer<PokemonListInstance>(
+                      builder: (context, instance, child) => Center(
+                        child: instance.pokemonName != ''
+                        ? Text('Last time you visited ${instance.pokemonName.toUpperCase()}!', 
+                          style: const TextStyle(color: CupertinoColors.activeBlue))
+                        : const Text('You haven`t visited any Pokemon!', 
+                          style: TextStyle(color: CupertinoColors.activeBlue))
+                      )
+                    ),
+                    const SizedBox(height: 5),
+                    pokemonListInstance
+                    ]
+                  );
+                }
 
                 if (index != listOfPokemons.length - 1) {
                   return pokemonListInstance;

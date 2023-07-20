@@ -1,28 +1,12 @@
 import 'package:flutter/cupertino.dart';
-import 'package:pokemon_app/screens/details/pokemon_details.dart';
 
-class PokemonListInstance extends StatelessWidget {
-  final String name;
-  final String detailsUri;
+class PokemonListInstance with ChangeNotifier {
+  String pokemonName = '';
+  String pokemonDetailsUri = '';
 
-  const PokemonListInstance({
-    super.key,
-    required this.name,
-    this.detailsUri = ''
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoButton.filled(
-      onPressed: () {
-        Navigator.push(
-          context,
-          CupertinoPageRoute(builder: (context) => PokemonDetails(name: name, detailsUri: detailsUri))
-        );
-      },
-      child: Center(
-        child: Text(name.toUpperCase()),
-      ),
-    );
+  void click(String name, String detailsUri) {
+    pokemonName = name;
+    pokemonDetailsUri = detailsUri;
+    notifyListeners();
   }
 }
